@@ -1,0 +1,121 @@
+name: build_gentoo_linux_image
+
+env:
+  version: ${{ github.ref_name }}
+
+on:
+  push:
+    tags:
+      - '*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: [self-hosted, Linux, kvm]
+    
+    container:
+      image: ghcr.io/net-architect-cloud/docker-libguestfs-tools:latest
+      options: --device=/dev/kvm --volume /tmp:/shared
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Download Gentoo Linux base image
+        run: |
+          wget "https://gentoo.osuosl.org/experimental/amd64/openstack/gentoo-openstack-amd64-default-latest.qcow2" -O base-os.qcow2
+          
+      - name: Modify Gentoo Linux base image
+        run: |
+          virt-copy-in -a base-os.qcow2 config/cloud.cfg /etc/cloud/
+ 
+      - name: Sysprep & Sparsify image
+        run: |
+          virt-sysprep -a base-os.qcow2
+          virt-sparsify --convert qcow2 --compress base-os.qcow2 gentoo-amd64-default-${{ env.version }}.qcow2
+          
+          {
+            echo "# Gentoo Linux ${{ env.version }} checksums"
+            echo "# Generated on: $(date)"
+            echo ""
+            echo "## MD5"
+            md5sum gentoo-amd64-default-${{ env.version }}.qcow2
+            echo ""
+            echo "## SHA1"
+            sha1sum gentoo-amd64-default-${{ env.version }}.qcow2
+            echo ""
+            echo "## SHA256"
+            sha256sum gentoo-amd64-default-${{ env.version }}.qcow2
+          } > checksums.txt
+          
+          cp gentoo-amd64-default-${{ env.version }}.qcow2 /shared
+          cp checksums.txt /shared
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gentoo-linux-image
+          path: |
+            gentoo-amd64-default-${{ env.version }}.qcow2
+            checksums.txt
+
+  deploy:
+    needs: build
+    runs-on: [self-hosted, Linux, kvm]
+    container:
+      image: ghcr.io/net-architect-cloud/docker-scp-gateway:latest
+      options: --user root
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      
+      - name: Create directory structure
+        run: |
+          mkdir -p deploy/${{ env.version }}
+          
+          find artifacts -name "*.qcow2" -exec cp {} deploy/${{ env.version }}/ \;
+          find artifacts -name "*.txt" -exec cp {} deploy/${{ env.version }}/ \;
+          
+          echo "Gentoo Linux Images - Version ${{ env.version }}" > deploy/${{ env.version }}/README.txt
+          echo "Generated on: $(date)" >> deploy/${{ env.version }}/README.txt
+          echo "" >> deploy/${{ env.version }}/README.txt
+          echo "Available files:" >> deploy/${{ env.version }}/README.txt
+          ls -la deploy/${{ env.version }}/ >> deploy/${{ env.version }}/README.txt
+      
+      - name: Deploy to SFTP server
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.SFTP_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+           
+          ls -la ~/.ssh/deploy_key
+            
+          KEY_PATH="/github/home/.ssh/deploy_key"
+          SSH_OPTS="-i $KEY_PATH -p ${{ secrets.SFTP_PORT || 22 }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+          SSH_CMD="ssh $SSH_OPTS ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}"
+          REPO_NAME="${{ github.event.repository.name }}"
+          REMOTE_PATH="public_html/repo.openimages.cloud/$REPO_NAME"
+            
+          echo "SSH connection test with key: $KEY_PATH"
+          $SSH_CMD "echo 'SSH connection successful'"
+            
+          $SSH_CMD "mkdir -p $REMOTE_PATH/${{ env.version }}"
+            
+          rsync -avz -e "ssh $SSH_OPTS" \
+            deploy/${{ env.version }}/ ${{ secrets.SFTP_USERNAME }}@${{ secrets.SFTP_HOST }}:$REMOTE_PATH/${{ env.version }}/
+           
+          $SSH_CMD "rm -f $REMOTE_PATH/latest"
+            
+          $SSH_CMD "ln -sf ${{ env.version }} $REMOTE_PATH/latest"
+            
+          echo "Verification of 'latest' symbolic link:"
+          $SSH_CMD "ls -la $REMOTE_PATH/latest"
+            
+          echo "✅ Deployment completed successfully!"
+          echo ""
+          echo "📦 Gentoo Linux images available at the following URLs:"
+          echo "  - Version ${{ env.version }} : https://repo.openimages.cloud/$REPO_NAME/${{ env.version }}/"
+          echo "  - Latest version : https://repo.openimages.cloud/$REPO_NAME/latest/"
