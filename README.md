@@ -24,6 +24,16 @@
   </p>
 </div>
 
+> ⚠️ **Known issue (2026-05-10)**: dry-run builds fail in DIB's
+> `bootloader` element because `sys-kernel/gentoo-kernel-bin`'s
+> postinst hook calls `installkernel` → `grub-mkconfig` before the
+> bootloader element has installed grub. `DIB_GENTOO_KERNEL` env-var
+> override doesn't help — the kernel package is hardcoded inside the
+> bootloader element's install scripts. Resolving this needs a custom
+> DIB element under `build/elements/oic-gentoo-kernel/` that pins the
+> kernel install to run AFTER bootloader. Tracked as a follow-up; no
+> v0 release available on the CDN yet.
+
 ## About
 
 This repo builds [Gentoo Linux][gentoo] cloud images **from scratch**
