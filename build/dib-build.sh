@@ -26,9 +26,17 @@ VERSION="${2:?usage: dib-build.sh <output-dir> <version>}"
 # --- Defaults overridable via env -----------------------------------
 DIB_RELEASE="${DIB_RELEASE:-23.0}"
 DIB_GENTOO_PROFILE="${DIB_GENTOO_PROFILE:-default/linux/amd64/23.0/no-multilib/systemd}"
+# `gentoo-kernel-bin` (DIB default) ships a postinst hook that calls
+# `installkernel` which tries to run grub-mkconfig — and that fails in
+# the chroot because grub isn't installed yet at kernel-postinst time
+# (chicken/egg with the bootloader element). Switch to
+# `sys-kernel/gentoo-sources` which compiles from source and doesn't
+# carry the auto-install hook. The compile adds ~10-15 min on
+# ubuntu-latest's 4-core runner but is the cleanest fix.
+DIB_GENTOO_KERNEL="${DIB_GENTOO_KERNEL:-gentoo-sources}"
 
 echo "[dib-build] out_dir=$OUT_DIR version=$VERSION"
-echo "[dib-build] gentoo profile=$DIB_GENTOO_PROFILE release=$DIB_RELEASE"
+echo "[dib-build] gentoo profile=$DIB_GENTOO_PROFILE release=$DIB_RELEASE kernel=$DIB_GENTOO_KERNEL"
 
 # --- Install build prerequisites (Ubuntu container) -----------------
 apt-get update
@@ -51,6 +59,7 @@ pip install diskimage-builder
 # may pull from apt-style mirrors via curl).
 export DIB_RELEASE
 export DIB_GENTOO_PROFILE
+export DIB_GENTOO_KERNEL
 # Skip cosign verify of stage3 — DIB verifies via the manifest
 # signatures fetched alongside.
 # Cloud-init datasources we want enabled in the image:
