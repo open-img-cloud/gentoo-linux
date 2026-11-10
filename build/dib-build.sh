@@ -11,7 +11,7 @@
 #
 # Container expected: ubuntu:24.04 (set by the caller release.yml).
 # DIB's gentoo element runs portage operations inside the chroot and
-# is independent of the host distro — Ubuntu host works fine.
+# is independent of the host distro: Ubuntu host works fine.
 #
 # Build is long: stage3 download + portage tree sync + emerge of the
 # minimum set (cloud-init, openssh-server, qemu-guest-agent,
@@ -27,7 +27,7 @@ VERSION="${2:?usage: dib-build.sh <output-dir> <version>}"
 DIB_RELEASE="${DIB_RELEASE:-23.0}"
 DIB_GENTOO_PROFILE="${DIB_GENTOO_PROFILE:-default/linux/amd64/23.0/no-multilib/systemd}"
 # `gentoo-kernel-bin` (DIB default) ships a postinst hook that calls
-# `installkernel` which tries to run grub-mkconfig — and that fails in
+# `installkernel` which tries to run grub-mkconfig: and that fails in
 # the chroot because grub isn't installed yet at kernel-postinst time
 # (chicken/egg with the bootloader element). Switch to
 # `sys-kernel/gentoo-sources` which compiles from source and doesn't
@@ -60,7 +60,7 @@ pip install diskimage-builder
 export DIB_RELEASE
 export DIB_GENTOO_PROFILE
 export DIB_GENTOO_KERNEL
-# Skip cosign verify of stage3 — DIB verifies via the manifest
+# Skip cosign verify of stage3: DIB verifies via the manifest
 # signatures fetched alongside.
 # Cloud-init datasources we want enabled in the image:
 export CLOUD_INIT_DATASOURCES='OpenStack, ConfigDrive, NoCloud, None'

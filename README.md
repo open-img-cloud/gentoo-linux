@@ -28,7 +28,7 @@
 > `bootloader` element because `sys-kernel/gentoo-kernel-bin`'s
 > postinst hook calls `installkernel` → `grub-mkconfig` before the
 > bootloader element has installed grub. `DIB_GENTOO_KERNEL` env-var
-> override doesn't help — the kernel package is hardcoded inside the
+> override doesn't help: the kernel package is hardcoded inside the
 > bootloader element's install scripts. Resolving this needs a custom
 > DIB element under `build/elements/oic-gentoo-kernel/` that pins the
 > kernel install to run AFTER bootloader. Tracked as a follow-up; no
@@ -43,7 +43,7 @@ fetches a fresh weekly stage3 from
 the cloud-friendly package set, and produces a bootable qcow2.
 
 We deliberately do **NOT** republish Gentoo's own `experimental/openstack/`
-images — those have been stale since April 2023 and are essentially
+images: those have been stale since April 2023 and are essentially
 abandoned. Building from stage3 gives us a fresh kernel + userland on
 every release.
 
@@ -98,7 +98,7 @@ cosign verify-blob \
 ```
 
 The certificate identity points at the **reusable** DIB build workflow
-in `open-img-cloud/.github` — that's where GitHub's OIDC binds the SAN
+in `open-img-cloud/.github`: that's where GitHub's OIDC binds the SAN
 for keyless signing. To tie the artifact back to *this* repo's commit,
 also check `MANIFEST.json` (commit, build_url, builder digest).
 
@@ -175,7 +175,7 @@ Distributed under the GPL-2.0 License. See `LICENSE`.
 
 ## Contact
 
-Kevin Allioli — kevin@stackops.ch · [@stackopshq](https://twitter.com/stackopshq)
+Kevin Allioli · kevin@stackops.ch · [@stackopshq](https://twitter.com/stackopshq)
 
 Project: [open-img-cloud/gentoo-linux](https://github.com/open-img-cloud/gentoo-linux)
 
