@@ -18,7 +18,7 @@
 # part, and reformat YYYYMMDD → YYYY.MM.DD. Same date-based version
 # scheme as alpaquita-linux. Git tag: `v<VERSION>`.
 #
-# Runs in the upstream-watch reusable workflow (no KVM needed) — keep
+# Runs in the upstream-watch reusable workflow (no KVM needed): keep
 # it portable bash + curl + awk only.
 
 set -euo pipefail
