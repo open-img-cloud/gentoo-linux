@@ -57,12 +57,16 @@ pip install diskimage-builder
 # may pull from apt-style mirrors via curl).
 export GENTOO_PROFILE
 export DIB_CLOUD_INIT_DATASOURCES
+# Local elements shipped in this repo (build/elements/oic-gentoo).
+export ELEMENTS_PATH="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/elements"
 # Stage3 integrity: the element verifies the stage3 against the Gentoo
 # release key (extra-data.d/gentoo-releng.gpg).
 
 cd "$work"
 # Element list:
 #   gentoo                     - base distro (auto-fetches latest stage3)
+#   oic-gentoo                 - cloud-init + openssh-server elements,
+#                                networkd/resolved, qemu-guest-agent, growpart
 #   cloud-init-datasources     - injects datasource_list into the image
 #   vm                         - boot+disk wrapper for a bootable qcow2
 #   bootloader                 - grub2 install
@@ -71,7 +75,7 @@ disk-image-create \
   -t qcow2 \
   --no-tmpfs \
   -o "$OUT_DIR/gentoo-${VERSION}-x86_64" \
-  gentoo cloud-init-datasources vm bootloader
+  gentoo oic-gentoo cloud-init-datasources vm bootloader
 
 ls -lh "$OUT_DIR/gentoo-${VERSION}-x86_64.qcow2"
 echo "[dib-build] done"

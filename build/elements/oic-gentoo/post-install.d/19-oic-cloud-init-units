@@ -1,0 +1,31 @@
+#!/bin/bash
+# cloud-init >= 24.x replaced cloud-init.service with cloud-init-main and
+# cloud-init-network. The DIB cloud-init element (20-enable-cloud-init)
+# only knows that for some Debian/Ubuntu releases and runs
+# `systemctl enable cloud-init.service` on Gentoo, which fails. Enable the
+# new units here and leave a no-op cloud-init.service so the element's
+# step succeeds.
+
+if [ "${DIB_DEBUG_TRACE:-0}" -gt 0 ]; then
+    set -x
+fi
+set -eu
+set -o pipefail
+
+if [ -e /usr/lib/systemd/system/cloud-init-main.service ] && \
+   [ ! -e /usr/lib/systemd/system/cloud-init.service ]; then
+    systemctl enable cloud-init-main.service cloud-init-network.service
+    cat > /etc/systemd/system/cloud-init.service <<'UNIT'
+# openimages.cloud compatibility unit: cloud-init runs from
+# cloud-init-main.service and cloud-init-network.service.
+[Unit]
+Description=cloud-init (compatibility no-op)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/true
+
+[Install]
+WantedBy=cloud-init.target
+UNIT
+fi
