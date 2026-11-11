@@ -24,19 +24,17 @@ OUT_DIR="${1:?usage: dib-build.sh <output-dir> <version>}"
 VERSION="${2:?usage: dib-build.sh <output-dir> <version>}"
 
 # --- Defaults overridable via env -----------------------------------
-DIB_RELEASE="${DIB_RELEASE:-23.0}"
-DIB_GENTOO_PROFILE="${DIB_GENTOO_PROFILE:-default/linux/amd64/23.0/no-multilib/systemd}"
-# `gentoo-kernel-bin` (DIB default) ships a postinst hook that calls
-# `installkernel` which tries to run grub-mkconfig: and that fails in
-# the chroot because grub isn't installed yet at kernel-postinst time
-# (chicken/egg with the bootloader element). Switch to
-# `sys-kernel/gentoo-sources` which compiles from source and doesn't
-# carry the auto-install hook. The compile adds ~10-15 min on
-# ubuntu-latest's 4-core runner but is the cleanest fix.
-DIB_GENTOO_KERNEL="${DIB_GENTOO_KERNEL:-gentoo-sources}"
+# The DIB gentoo element reads GENTOO_PROFILE (not DIB_GENTOO_PROFILE) and
+# derives the stage3 from it: ".../23.0/systemd" selects
+# latest-stage3-amd64-systemd. It always installs gentoo-kernel-bin (there
+# is no variable to change the kernel package); its postinst works again
+# with current installkernel (checked 2026-11-11).
+GENTOO_PROFILE="${GENTOO_PROFILE:-default/linux/amd64/23.0/systemd}"
+# Read by the cloud-init-datasources element (05-set-cloud-init-sources).
+DIB_CLOUD_INIT_DATASOURCES="${DIB_CLOUD_INIT_DATASOURCES:-OpenStack, ConfigDrive, NoCloud, None}"
 
 echo "[dib-build] out_dir=$OUT_DIR version=$VERSION"
-echo "[dib-build] gentoo profile=$DIB_GENTOO_PROFILE release=$DIB_RELEASE kernel=$DIB_GENTOO_KERNEL"
+echo "[dib-build] gentoo profile=$GENTOO_PROFILE datasources=$DIB_CLOUD_INIT_DATASOURCES"
 
 # --- Install build prerequisites (Ubuntu container) -----------------
 apt-get update
@@ -57,13 +55,10 @@ pip install diskimage-builder
 # Same gpgv hardening as octavia in case any sub-debootstrap is invoked
 # (the gentoo element doesn't use debootstrap, but cloud-init-datasources
 # may pull from apt-style mirrors via curl).
-export DIB_RELEASE
-export DIB_GENTOO_PROFILE
-export DIB_GENTOO_KERNEL
-# Skip cosign verify of stage3: DIB verifies via the manifest
-# signatures fetched alongside.
-# Cloud-init datasources we want enabled in the image:
-export CLOUD_INIT_DATASOURCES='OpenStack, ConfigDrive, NoCloud, None'
+export GENTOO_PROFILE
+export DIB_CLOUD_INIT_DATASOURCES
+# Stage3 integrity: the element verifies the stage3 against the Gentoo
+# release key (extra-data.d/gentoo-releng.gpg).
 
 cd "$work"
 # Element list:

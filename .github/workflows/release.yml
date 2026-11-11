@@ -59,4 +59,6 @@ jobs:
       verify_builder: false
       publish: ${{ inputs.publish == true || github.event_name == 'push' }}
       sync_latest: true
+      # cloud-init names the default user after the distro on Gentoo.
+      runtime_smoke_login_user: gentoo
     secrets: inherit
