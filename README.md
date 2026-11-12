@@ -1,199 +1,130 @@
-<div id="top"></div>
+<p align="center">
+  <a href="https://openimages.cloud/images/gentoo-linux/">
+    <img src="https://openimages.cloud/img/og/gentoo-linux.png" alt="Gentoo Linux cloud image for OpenStack and Proxmox" width="720">
+  </a>
+</p>
 
-<!-- PROJECT SHIELDS -->
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![GPL-2.0 License][license-shield]][license-url]
+<p align="center">
+  <a href="https://openimages.cloud/images/gentoo-linux/"><img alt="Latest version" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fimages.openimages.cloud%2Fgentoo-linux%2Flatest%2FMANIFEST.json&query=%24.version&label=latest&color=2459c4&cacheSeconds=3600"></a>
+  <a href="https://github.com/open-img-cloud/gentoo-linux/actions/workflows/release.yml"><img alt="Release" src="https://github.com/open-img-cloud/gentoo-linux/actions/workflows/release.yml/badge.svg"></a>
+  <a href="https://openimages.cloud/verify/"><img alt="Signed with Sigstore cosign" src="https://img.shields.io/badge/signed-Sigstore%20cosign-2459c4"></a>
+  <a href="https://openimages.cloud/quality/"><img alt="Boot-tested on OpenStack" src="https://img.shields.io/badge/boot--tested-OpenStack-2459c4"></a>
+  <a href="LICENSE"><img alt="License GPL-2.0" src="https://img.shields.io/badge/license-GPL--2.0-555"></a>
+</p>
 
-<!-- PROJECT LOGO -->
-<br />
-<div align="center">
+<p align="center">
+  <a href="https://openimages.cloud/images/gentoo-linux/"><b>Catalog page</b></a> ·
+  <a href="https://images.openimages.cloud/gentoo-linux/latest/">Download</a> ·
+  <a href="https://openimages.cloud/verify/">Verify</a> ·
+  <a href="https://github.com/open-img-cloud/docs">Documentation</a> ·
+  <a href="https://github.com/open-img-cloud/gentoo-linux/issues">Report an issue</a>
+</p>
 
-<h3 align="center">Gentoo Linux Cloud Images</h3>
+Gentoo Linux cloud image (qcow2) for **OpenStack** and **Proxmox**: Gentoo publishes no
+maintained cloud image, so this one is built from a fresh stage3 with
+[diskimage-builder](https://docs.openstack.org/diskimage-builder/), made ready for both clouds
+with the same rules as every [openimages.cloud](https://openimages.cloud) image, signed with
+Sigstore cosign and boot-tested on a real OpenStack before it is published.
 
-  <p align="center">
-    Cloud-init-ready, signed Gentoo Linux images for OpenStack and
-    Proxmox, built fresh from upstream stage3 via DIB
-    <br />
-    <br />
-    <a href="https://github.com/open-img-cloud/gentoo-linux/issues">Report a bug</a>
-    ·
-    <a href="https://github.com/open-img-cloud/gentoo-linux/issues">Request a feature</a>
-  </p>
-</div>
+## At a glance
 
-> ⚠️ **Known issue (2026-05-10)**: dry-run builds fail in DIB's
-> `bootloader` element because `sys-kernel/gentoo-kernel-bin`'s
-> postinst hook calls `installkernel` → `grub-mkconfig` before the
-> bootloader element has installed grub. `DIB_GENTOO_KERNEL` env-var
-> override doesn't help: the kernel package is hardcoded inside the
-> bootloader element's install scripts. Resolving this needs a custom
-> DIB element under `build/elements/oic-gentoo-kernel/` that pins the
-> kernel install to run AFTER bootloader. Tracked as a follow-up; no
-> v0 release available on the CDN yet.
+| | |
+|---|---|
+| **Upstream** | [Gentoo](https://www.gentoo.org/) amd64 systemd stage3 from [distfiles.gentoo.org](https://distfiles.gentoo.org/releases/amd64/autobuilds/), verified against the Gentoo release key |
+| **Profile** | `default/linux/amd64/23.0/systemd`, binary distribution kernel (`gentoo-kernel-bin`) |
+| **Default user** | `gentoo`, SSH key only, passwordless `sudo` |
+| **Firmware** | BIOS |
+| **Format** | qcow2, x86_64, root filesystem grown to the disk at first boot |
+| **Version** | `YYYY.MM.DD`, the date of the latest upstream stage3 autobuild, e.g. `2026.11.08` ([all versions](https://images.openimages.cloud/gentoo-linux/versions.json)) |
+| **Support** | Rolling release: each image is rebuilt from the latest stage3 |
 
-## About
-
-This repo builds [Gentoo Linux][gentoo] cloud images **from scratch**
-using OpenStack [diskimage-builder][dib]'s `gentoo` element, which
-fetches a fresh weekly stage3 from
-[distfiles.gentoo.org/releases/amd64/autobuilds][upstream], emerges
-the cloud-friendly package set, and produces a bootable qcow2.
-
-We deliberately do **NOT** republish Gentoo's own `experimental/openstack/`
-images: those have been stale since April 2023 and are essentially
-abandoned. Building from stage3 gives us a fresh kernel + userland on
-every release.
-
-The build pipeline is shared with the rest of [`open-img-cloud`][org]:
-this repo only ships the `VERSION`, `build/dib-build.sh`,
-`build/detect-upstream.sh`, and two thin caller workflows that delegate
-to the reusable `build-dib-image.yml` in
-[`open-img-cloud/.github`][shared] (`@main`).
-
-## Versioning
-
-`<version>` is the date of the upstream stage3 the build was based on
-(`YYYY.MM.DD`, e.g. `2026.05.03`). Same date-based scheme as
-alpaquita-linux, since Gentoo is rolling-release with no semver.
-
-The `watch.yml` cron polls Gentoo's `latest-stage3-amd64-openrc.txt`
-manifest daily at 06:53 UTC and bumps `VERSION` when a fresher stage3
-is published. Tag `v<version>` triggers a release build on top of
-that exact stage3.
-
-Gentoo profile pinned: `default/linux/amd64/23.0/no-multilib/systemd`.
-Kernel: `sys-kernel/gentoo-kernel-bin` (precompiled, skips the
-multi-hour kernel rebuild).
-
-## Where to download
-
-Public CDN, served via Cloudflare in front of an R2 bucket (mirror of
-the source-of-truth Garage):
-
-| URL pattern                                                                          | Cache policy                  |
-|--------------------------------------------------------------------------------------|-------------------------------|
-| `https://images.openimages.cloud/gentoo-linux/<version>/<filename>`                  | `max-age=31536000, immutable` |
-| `https://images.openimages.cloud/gentoo-linux/latest/<filename>`                     | `max-age=300`                 |
-
-Browse: [images.openimages.cloud/gentoo-linux/latest/][latest]
-
-Filename: `gentoo-<version>-x86_64.qcow2` (e.g.
-`gentoo-2026.05.03-x86_64.qcow2`).
-
-## Verify before deploy
-
-cosign 3.x:
+## Quick start
 
 ```sh
-sha256sum -c <filename>.sha256                    # integrity
-cosign verify-blob \
-    --bundle <filename>.bundle \
-    --new-bundle-format \
-    --certificate-identity-regexp '^https://github.com/open-img-cloud/\.github/\.github/workflows/build-dib-image\.yml@' \
-    --certificate-oidc-issuer https://token.actions.githubusercontent.com \
-    <filename>                                     # provenance
+# Latest version and its file name, from the signed manifest
+M=https://images.openimages.cloud/gentoo-linux/latest/MANIFEST.json
+V=$(curl -fsS $M | jq -r .version); F=$(curl -fsS $M | jq -r .filename)
+curl -fLO https://images.openimages.cloud/gentoo-linux/$V/$F
 ```
 
-The certificate identity points at the **reusable** DIB build workflow
-in `open-img-cloud/.github`: that's where GitHub's OIDC binds the SAN
-for keyless signing. To tie the artifact back to *this* repo's commit,
-also check `MANIFEST.json` (commit, build_url, builder digest).
-
-## How to use
-
-### OpenStack
+<details>
+<summary><b>OpenStack</b></summary>
 
 ```sh
-# Pull the qcow2 (replace <V> with the desired date, e.g. 2026.05.03)
-curl -fLO https://images.openimages.cloud/gentoo-linux/<V>/gentoo-<V>-x86_64.qcow2
-
-openstack image create \
-    --disk-format qcow2 --container-format bare \
-    --min-disk 10 \
-    --file gentoo-<V>-x86_64.qcow2 \
-    'Gentoo Linux <V>'
+openstack image create --disk-format qcow2 --container-format bare \
+  --property os_distro=gentoo \
+  --property hw_qemu_guest_agent=yes --property os_admin_user=gentoo \
+  --file "$F" "Gentoo Linux $V"
 ```
 
-### Proxmox VE
+The full property set (SCSI disk, multiqueue, quiesced snapshots) is on the
+[catalog page](https://openimages.cloud/images/gentoo-linux/) and in
+[`index.json`](https://images.openimages.cloud/index.json). To keep images up to date
+automatically, use [oic-sync](https://github.com/open-img-cloud/oic-sync).
+
+</details>
+
+<details>
+<summary><b>Proxmox VE</b></summary>
+
+The commands to create a cloud-init template from this image are on the
+[catalog page](https://openimages.cloud/images/gentoo-linux/).
+
+</details>
+
+<details>
+<summary><b>Verify the signature</b></summary>
 
 ```sh
-scp gentoo-<V>-x86_64.qcow2 root@proxmox:/var/lib/vz/template/iso/
-
-qm create <VMID> --name gentoo-template --memory 2048 --cores 2 --net0 virtio,bridge=vmbr0
-qm importdisk <VMID> gentoo-<V>-x86_64.qcow2 <STORAGE>
-qm set <VMID> --scsihw virtio-scsi-pci --scsi0 <STORAGE>:vm-<VMID>-disk-0
-qm set <VMID> --boot c --bootdisk scsi0
-qm set <VMID> --ide2 <STORAGE>:cloudinit
-qm set <VMID> --serial0 socket --vga serial0
-qm set <VMID> --ciuser gentoo --sshkeys ~/.ssh/authorized_keys --ipconfig0 ip=dhcp
+curl -fLO https://images.openimages.cloud/gentoo-linux/$V/$F.bundle
+cosign verify-blob "$F" --bundle "$F.bundle" \
+  --certificate-identity-regexp '^https://github.com/open-img-cloud/\.github/\.github/workflows/build-(libguestfs|dib|nix-flake|freebsd)-image\.yml@' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
 ```
 
-## Release flow
+</details>
 
-1. **`watch.yml`** runs daily 06:53 UTC, calls `build/detect-upstream.sh`
-   which parses Gentoo's `latest-stage3-amd64-openrc.txt` manifest and
-   emits `YYYY.MM.DD`.
-2. If the version differs from the current `VERSION`, the workflow
-   opens (or updates) a PR `auto/upstream-bump`.
-3. Merging the PR + pushing a `v<VERSION>` tag fires `release.yml`,
-   which calls the shared `build-dib-image.yml@main` reusable workflow.
-4. The reusable workflow runs `build/dib-build.sh` inside an
-   `ubuntu:24.04` container on a GH-hosted ubuntu-latest runner.
-   The script pip-installs DIB then runs `disk-image-create gentoo
-   cloud-init-datasources vm bootloader`. Build is long (~30-60 min)
-   because portage emerges the package set even with binhost.
-5. Output qcow2 is signed (cosign keyless), bundled with MANIFEST,
-   uploaded to Garage + R2, and Cloudflare cache for `latest/` is
-   purged.
+## What this image contains
 
-## Repository layout
+The image is assembled by [`build/dib-build.sh`](build/dib-build.sh) with the DIB elements
+`gentoo`, [`oic-gentoo`](build/elements/oic-gentoo) (local to this repository),
+`cloud-init-datasources`, `vm` and `bootloader`:
 
-```
-VERSION                          single line, e.g. "2026.05.03"
-build/
-  dib-build.sh                   DIB build hook (out_dir as $1, version as $2)
-  detect-upstream.sh             parses Gentoo's stage3 manifest
-.github/workflows/
-  release.yml                    calls build-dib-image.yml on tag push
-  watch.yml                      daily cron, calls upstream-watch.yml
-.gitignore                       repo-local override for global build/ exclusion
-LICENSE                          GPL-2.0
-```
+- a stage3 checked against the Gentoo release key, with the systemd profile and the binary
+  distribution kernel (no kernel compile), GRUB as boot loader;
+- cloud-init and `openssh-server`, with the datasources config drive first, then the
+  metadata service (`ConfigDrive, OpenStack, NoCloud, None`); the cloud-init 24+ units
+  (`cloud-init-main`, `cloud-init-network`) are enabled;
+- `systemd-networkd` and `systemd-resolved`, with a DHCP fallback on every Ethernet
+  interface under the network configuration that cloud-init writes;
+- `qemu-guest-agent` (enabled at boot) and `growpart`;
+- sshd accepting public keys only (no password, no keyboard-interactive).
 
-## Contributing
+Every release must pass the same [runtime contract](https://openimages.cloud/quality/) on
+OpenStack: SSH with the injected key, cloud-init finished, DNS, hostname, root filesystem grown,
+passwordless `sudo`, IPv6 address and egress.
 
-Fork, branch, PR. Keep the dib-build script focused on the upstream
-DIB element list; complex emerge customisation belongs in a
-gentoo-specific element under DIB rather than inline here.
+### Notes
+
+- Gentoo's own `experimental/openstack/` images have not been refreshed since April 2023,
+  which is why this image is built from stage3 instead of being republished.
+- The build runs DIB in an `ubuntu:24.04` container on a GitHub-hosted runner and takes
+  about 30 to 60 minutes, since portage emerges the package set.
+
+## How releases happen
+
+1. Every day at 06:53 UTC a watcher reads Gentoo's latest stage3 manifest and opens a pull
+   request that bumps [`VERSION`](VERSION) when a newer stage3 is published.
+2. Merging it is all it takes: the release is tagged, built, signed, boot-tested and
+   published, then `latest/` and the [catalog](https://openimages.cloud/images/) move to it.
+
+This repository only holds what is specific to Gentoo: [`VERSION`](VERSION),
+[`build/dib-build.sh`](build/dib-build.sh), [`build/detect-upstream.sh`](build/detect-upstream.sh),
+the [`oic-gentoo`](build/elements/oic-gentoo) element and thin workflows calling the shared
+pipeline in [`open-img-cloud/.github`](https://github.com/open-img-cloud/.github).
 
 ## License
 
-Distributed under the GPL-2.0 License. See `LICENSE`.
-
-## Contact
-
-Kevin Allioli · kevin@stackops.ch · [@stackopshq](https://twitter.com/stackopshq)
-
-Project: [open-img-cloud/gentoo-linux](https://github.com/open-img-cloud/gentoo-linux)
-
-[gentoo]: https://www.gentoo.org/
-[upstream]: https://distfiles.gentoo.org/releases/amd64/autobuilds/
-[dib]: https://docs.openstack.org/diskimage-builder/
-[org]: https://github.com/open-img-cloud
-[shared]: https://github.com/open-img-cloud/.github
-[latest]: https://images.openimages.cloud/gentoo-linux/latest/
-
-<!-- shields -->
-[contributors-shield]: https://img.shields.io/github/contributors/open-img-cloud/gentoo-linux.svg?style=for-the-badge
-[contributors-url]: https://github.com/open-img-cloud/gentoo-linux/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/open-img-cloud/gentoo-linux.svg?style=for-the-badge
-[forks-url]: https://github.com/open-img-cloud/gentoo-linux/network/members
-[stars-shield]: https://img.shields.io/github/stars/open-img-cloud/gentoo-linux.svg?style=for-the-badge
-[stars-url]: https://github.com/open-img-cloud/gentoo-linux/stargazers
-[issues-shield]: https://img.shields.io/github/issues/open-img-cloud/gentoo-linux.svg?style=for-the-badge
-[issues-url]: https://github.com/open-img-cloud/gentoo-linux/issues
-[license-shield]: https://img.shields.io/github/license/open-img-cloud/gentoo-linux.svg?style=for-the-badge
-[license-url]: https://github.com/open-img-cloud/gentoo-linux/blob/main/LICENSE
+The build tooling in this repository is under [GPL-2.0](LICENSE). The image keeps the licensing
+terms of Gentoo and of each package it contains. Gentoo is a trademark of its owner; this
+project is not affiliated with the Gentoo project.
