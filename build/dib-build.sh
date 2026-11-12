@@ -31,7 +31,7 @@ VERSION="${2:?usage: dib-build.sh <output-dir> <version>}"
 # with current installkernel (checked 2026-11-11).
 GENTOO_PROFILE="${GENTOO_PROFILE:-default/linux/amd64/23.0/systemd}"
 # Read by the cloud-init-datasources element (05-set-cloud-init-sources).
-DIB_CLOUD_INIT_DATASOURCES="${DIB_CLOUD_INIT_DATASOURCES:-OpenStack, ConfigDrive, NoCloud, None}"
+DIB_CLOUD_INIT_DATASOURCES="${DIB_CLOUD_INIT_DATASOURCES:-ConfigDrive, OpenStack, NoCloud, None}"
 
 echo "[dib-build] out_dir=$OUT_DIR version=$VERSION"
 echo "[dib-build] gentoo profile=$GENTOO_PROFILE datasources=$DIB_CLOUD_INIT_DATASOURCES"
